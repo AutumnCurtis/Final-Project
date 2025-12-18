@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agatha Christie Memory Game</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Georgia", serif;
+      background: radial-gradient(circle at top, #3b2f1c, #1f160c);
+      color: #e8dcc4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .game-container {
+      background: #2a2015;
+      border: 3px solid #8b6b3e;
+      border-radius: 20px;
+      padding: 26px 30px 30px;
+      max-width: 780px;
+      width: 100%;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 6px;
+      font-size: 36px;
+      letter-spacing: 1.5px;
+      color: #3e2f1c;
+      font-variant: small-caps;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 15px;
+      margin-bottom: 20px;
+      color: #5a4630;
+      font-style: italic;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      font-size: 14px;
+      color: #5a4630;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      aspect-ratio: 1 / 1;
+      perspective: 900px;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.5s ease;
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backface-visibility: hidden;
+      text-align: center;
+      padding: 10px;
+      font-size: 13px;
+      line-height: 1.2;
+    }
+
+    .card-front {
+      background: repeating-linear-gradient(
+        45deg,
+        #5a4630,
+        #5a4630 10px,
+        #6b553c 10px,
+        #6b553c 20px
+      );
+      color: #f5ecd7;
+      font-weight: 800;
+      letter-spacing: 1px;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    .card-back {
+      background: #f4ecd8;
+      border: 2px solid #8b6b3e;
+      color: #2f2416;
+      transform: rotateY(180deg);
+      font-weight: 600;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .book-title {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .author {
+      font-size: 12px;
+      font-style: italic;
+      color: #5a4630;
+    }
+
+    .matched .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .matched .card-back {
+      background: #d7e6d1;
+      border-color: #6b8f71;
+      color: #1f3d2b;
+    }
+
+    .matched .card-back {
+      background: #064e3b;
+      border-color: #22c55e;
+      color: #d1fae5;
+    }
+
+    .reset {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #e6dcc6;
+      font-size: 15px;
+      font-weight: 700;
+      background: #f5ecd7;
+      color: #7c5e2c;
+      cursor: pointer;
+    }
+
+    .reset:hover {
+      background: #efe2bf;
+    }
+
+    .reset:hover {
+      background: #fde047;
+    }
+
+    .case-closed {
+      position: absolute;
+      inset: 0;
+      background: rgba(20, 14, 8, 0.95);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      border-radius: 20px;
+      color: #f5ecd7;
+    }
+
+    .case-closed h2 {
+      font-size: 42px;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+      font-variant: small-caps;
+    }
+
+    .case-closed p {
+      font-size: 16px;
+      margin-bottom: 20px;
+      color: #d6c8a8;
+    }
+
+    .case-closed button {
+      padding: 10px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 10px;
+      border: none;
+      background: #8b6b3e;
+      color: #1f160c;
+      cursor: pointer;
+    }
+
+    .case-closed button:hover {
+      background: #b89b63;
+    }
+
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Agatha Christie</h1>
+    <div class="subtitle">A Classic Mystery Memory Game</div>
+
+    <div class="stats">
+      <div>Moves: <span id="moves">0</span></div>
+      <div>Matches: <span id="matches">0</span> / 8</div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="case-closed" id="caseClosed">
+      <h2>Case Closed</h2>
+      <p>You have successfully solved every mystery.</p>
+      <button onclick="startGame()">Start a New Case</button>
+    </div>
+
+    <button class="reset" onclick="startGame()">New Investigation</button>
+  </div>
+
+  <script>
+    const titles = [
+      "Murder on the Orient Express",
+      "And Then There Were None",
+      "Death on the Nile",
+      "The ABC Murders",
+      "The Murder of Roger Ackroyd",
+      "Evil Under the Sun",
+      "The Mysterious Affair at Styles",
+      "Crooked House"
+    ];
+
+    const grid = document.getElementById("grid");
+    const movesEl = document.getElementById("moves");
+    const matchesEl = document.getElementById("matches");
+
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+    let moves = 0;
+    let matches = 0;
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // No images needed — titles will be displayed as styled text only
+
+    function createCard(title) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.title = title;
+
+      card.innerHTML = `
+        <div class="card-inner">
+          <div class="card-face card-front">Clue</div>
+          <div class="card-face card-back">
+            <div class="book-title">${title}</div>
+            <div class="author">Agatha Christie</div>
+          </div>
+        </div>
+      `;
+
+      card.addEventListener("click", () => flipCard(card));
+      return card;
+    }
+
+    function flipCard(card) {
+      if (lockBoard || card === firstCard || card.classList.contains("matched")) return;
+
+      card.classList.add("flipped");
+
+      if (!firstCard) {
+        firstCard = card;
+        return;
+      }
+
+      secondCard = card;
+      lockBoard = true;
+      moves++;
+      movesEl.textContent = moves;
+
+      checkMatch();
+    }
+
+    function checkMatch() {
+      const isMatch = firstCard.dataset.title === secondCard.dataset.title;
+
+      if (isMatch) {
+        firstCard.classList.add("matched");
+        secondCard.classList.add("matched");
+        matches++;
+        matchesEl.textContent = matches;
+        if (matches === 8) {
+          document.getElementById("caseClosed").style.display = "flex";
+        }
+        resetTurn();
+      } else {
+        setTimeout(() => {
+          firstCard.classList.remove("flipped");
+          secondCard.classList.remove("flipped");
+          resetTurn();
+        }, 900);
+      }
+    }
+
+    function resetTurn() {
+      [firstCard, secondCard] = [null, null];
+      lockBoard = false;
+    }
+
+    function startGame() {
+      grid.innerHTML = "";
+      moves = 0;
+      matches = 0;
+      movesEl.textContent = moves;
+      matchesEl.textContent = matches;
+      document.getElementById("caseClosed").style.display = "none";
+
+      const cards = shuffle([...titles, ...titles]);
+      cards.forEach(title => grid.appendChild(createCard(title)));
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
+
